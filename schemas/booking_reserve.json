@@ -23,6 +23,12 @@
         "description": "Caller phone number in E.164 form, or an anonymous call id.",
         "pattern": "^\\+?[0-9A-Za-z_-]{4,32}$",
         "examples": ["+14155552671", "anon-7f3a2b"]
+      },
+      "swap_from": {
+        "type": "string",
+        "description": "For a change/move request: the caller's existing held slot to release atomically once the new reservation succeeds. Must be a slot currently held by this caller.",
+        "pattern": "^[A-Za-z0-9_-]{2,40}$",
+        "examples": ["fri-1900"]
       }
     },
     "required": ["slot_id", "party_size", "caller_id"],

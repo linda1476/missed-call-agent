@@ -12,9 +12,9 @@ Three kinds of long-term memory, kept strictly separate:
 Raw call transcripts are never written here (see handoff.py).
 """
 
+import contextlib
 import json
 import sqlite3
-import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -66,8 +66,7 @@ class MemoryStore:
     def __init__(self, path: str | Path):
         self.path = str(path)
         Path(self.path).parent.mkdir(parents=True, exist_ok=True)
-        self._local = threading.local()
-        with self._conn() as c:
+        with self._tx() as c:
             c.executescript(_SCHEMA)
             c.execute("PRAGMA journal_mode=WAL")
 
@@ -77,10 +76,21 @@ class MemoryStore:
         conn.execute("PRAGMA busy_timeout=30000")
         return conn
 
+    @contextlib.contextmanager
+    def _tx(self):
+        """Transaction scope that closes the connection on exit — a bare
+        `with conn:` commits but never closes."""
+        conn = self._conn()
+        try:
+            with conn:
+                yield conn
+        finally:
+            conn.close()
+
     # ---- current-value slots (overwrite; prompt always includes these) ----
 
     def set_current(self, store_id: str, caller_id: str, key: str, value: str) -> None:
-        with self._conn() as c:
+        with self._tx() as c:
             c.execute(
                 "INSERT INTO current_slots(store_id, caller_id, key, value, updated_at)"
                 " VALUES(?,?,?,?,?)"
@@ -90,7 +100,7 @@ class MemoryStore:
             )
 
     def get_current(self, store_id: str, caller_id: str) -> dict[str, str]:
-        with self._conn() as c:
+        with self._tx() as c:
             rows = c.execute(
                 "SELECT key, value FROM current_slots WHERE store_id=? AND caller_id=?",
                 (store_id, caller_id),
@@ -101,7 +111,7 @@ class MemoryStore:
 
     def append_history(self, store_id: str, caller_id: str, kind: str,
                        text: str, meta: dict | None = None) -> int:
-        with self._conn() as c:
+        with self._tx() as c:
             cur = c.execute(
                 "INSERT INTO history(store_id, caller_id, kind, text, meta, created_at)"
                 " VALUES(?,?,?,?,?,?)",
@@ -113,7 +123,7 @@ class MemoryStore:
     def search_history(self, store_id: str, caller_id: str, query: str,
                        k: int = 3) -> list[dict]:
         terms = [t.lower() for t in query.split() if t.strip()]
-        with self._conn() as c:
+        with self._tx() as c:
             rows = c.execute(
                 "SELECT id, kind, text, meta, created_at FROM history"
                 " WHERE store_id=? AND caller_id=? ORDER BY id DESC",
@@ -129,7 +139,7 @@ class MemoryStore:
         return [r for _, r in scored[:k]]
 
     def recent_by_kind(self, store_id: str, kind: str, k: int = 200) -> list[dict]:
-        with self._conn() as c:
+        with self._tx() as c:
             rows = c.execute(
                 "SELECT id, caller_id, kind, text, meta, created_at FROM history"
                 " WHERE store_id=? AND kind=? ORDER BY id DESC LIMIT ?",
@@ -145,7 +155,7 @@ class MemoryStore:
         source — this is the only code path that writes rules."""
         if not source_text or not source_text.strip():
             raise ValueError("procedural rules require an owner-correction source")
-        with self._conn() as c:
+        with self._tx() as c:
             if supersedes is not None:
                 c.execute(
                     "UPDATE rules SET active=0, source_text=source_text||' | superseded: '||?"
@@ -160,7 +170,7 @@ class MemoryStore:
             return cur.lastrowid
 
     def get_rules(self, store_id: str) -> list[dict]:
-        with self._conn() as c:
+        with self._tx() as c:
             rows = c.execute(
                 "SELECT id, rule_text, source_text, source_at FROM rules"
                 " WHERE store_id=? AND active=1 ORDER BY id",
@@ -174,7 +184,7 @@ class MemoryStore:
         """Every stored text field concatenated — used by tests to prove raw
         transcripts never persist."""
         parts: list[str] = []
-        with self._conn() as c:
+        with self._tx() as c:
             for table, cols in (
                 ("current_slots", ("key", "value")),
                 ("history", ("kind", "text", "meta")),

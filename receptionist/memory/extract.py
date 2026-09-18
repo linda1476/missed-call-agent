@@ -11,9 +11,31 @@ from .working import WorkingMemory
 _NUM_WORDS = {
     "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
     "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+    "eleven": 11, "twelve": 12,
 }
 _WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday",
              "saturday", "sunday"]
+_NUM_TOK = (r"(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|"
+            r"eleven|twelve)")
+_TIME_RES = (
+    re.compile(rf"\b({_NUM_TOK})(?::(\d{{2}}))?\s*([ap]\.?m\.?)\b"),
+    re.compile(rf"\b(?:at|around)\s+({_NUM_TOK})(?::(\d{{2}}))?\b"),
+    re.compile(r"\b(\d{1,2}):(\d{2})\b"),
+)
+_BARE_NUMBER = re.compile(rf"\b({_NUM_TOK})\b", re.I)
+
+# Words that commonly follow self-intro patterns but are never names —
+# "i'm sorry", "it's fine", "this is ridiculous" are not callers' names.
+_NAME_STOP = {
+    "a", "an", "the", "this", "that", "there", "here", "back", "again",
+    "me", "you", "my", "your", "our", "their", "his", "her",
+    "fine", "ok", "okay", "good", "great", "sure", "sorry", "not", "so",
+    "very", "really", "too", "also", "still", "just", "calling", "looking",
+    "busy", "late", "early", "new", "old", "done", "ready", "free",
+    "ridiculous", "crazy", "bad", "terrible", "awful", "expensive",
+    "cheap", "urgent", "wrong", "wondering", "asking", "hoping", "trying",
+    "yes", "no", "yeah", "nope", "about", "for", "to", "in", "on", "at",
+}
 
 
 def _num(text: str) -> int | None:
@@ -23,20 +45,55 @@ def _num(text: str) -> int | None:
     return _NUM_WORDS.get(text)
 
 
+def unexplained_number(lower: str, fields: dict) -> int | None:
+    """First bare number (1-20) in the utterance that no parsed field
+    consumed — e.g. the 'five' in 'name's Dana, we're five' when only the
+    name parsed. Digits attributed to time/date fields are explained away;
+    word-times like 'noon' consume nothing."""
+    explained = set(re.findall(r"\d+", fields.get("date_text", "")))
+    if fields.get("time"):
+        m = None
+        for r in _TIME_RES:
+            m = r.search(lower)
+            if m:
+                break
+        if m:
+            explained |= {g for g in m.groups() if g}
+    for m in _BARE_NUMBER.finditer(lower):
+        tok = m.group(1)
+        if tok in explained:
+            continue
+        n = _num(tok)
+        if n is not None and 1 <= n <= 20:
+            return n
+    return None
+
+
 def parse_booking_fields(text: str) -> dict:
     """Pull booking fields from one utterance. Returns only found keys."""
     out: dict = {}
     t = " " + text.lower().strip() + " "
 
-    m = re.search(r"(?:my name is|name is|this is|name's|it's|i am|i'm)\s+([a-z]+)", t)
-    if m and m.group(1) not in {"calling", "looking", "here", "just", "a", "an"}:
+    # Strong patterns ("my name is X", "name is X") accept any case; weak
+    # patterns ("i'm X", "this is X", "it's X") require X capitalized in the
+    # original utterance so "it's fine"/"this is ridiculous" don't store a
+    # fake name.
+    m = re.search(r"(?:my name is|name is|name's)\s+([a-z']+)", t)
+    if m and m.group(1) not in _NAME_STOP:
         out["name"] = m.group(1).title()
+    else:
+        m = re.search(r"(?:this is|it's|i am|i'm)\s+([a-z]+)", text, re.I)
+        if m and m.group(1)[:1].isupper() and \
+                m.group(1).lower() not in _NAME_STOP:
+            out["name"] = m.group(1).title()
 
-    m = re.search(r"(?:table|party|reservation|booking|group)\s+(?:for|of)\s+"
-                  r"(\d+|one|two|three|four|five|six|seven|eight|nine|ten)", t)
+    m = re.search(rf"(?:table|party|reservation|booking|group)\s+(?:for|of)\s+"
+                  rf"({_NUM_TOK})", t)
     if not m:
-        m = re.search(r"for\s+(\d+|two|three|four|five|six|seven|eight)\s+"
+        m = re.search(rf"for\s+({_NUM_TOK})\s+"
                       r"(?:people|persons|guests|of us)", t)
+    if not m:
+        m = re.search(rf"for\s+({_NUM_TOK})\s*$", t)
     if m:
         out["party_size"] = _num(m.group(1))
 
@@ -58,11 +115,13 @@ def parse_booking_fields(text: str) -> dict:
     elif "midnight" in t:
         out["time"] = "0000"
     else:
-        m = (re.search(r"\b(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?)\b", t)
-             or re.search(r"\b(?:at|around)\s+(\d{1,2})(?::(\d{2}))?\b", t)
-             or re.search(r"\b(\d{1,2}):(\d{2})\b", t))
+        m = None
+        for r in _TIME_RES:
+            m = r.search(t)
+            if m:
+                break
         if m:
-            hour = int(m.group(1))
+            hour = _num(m.group(1))
             minute = int(m.group(2) or 0)
             ampm = (m.group(3) or "").replace(".", "") if m.lastindex >= 3 else ""
             if ampm == "pm" and hour < 12:
@@ -76,16 +135,17 @@ def parse_booking_fields(text: str) -> dict:
     return out
 
 
-def fields_to_slot_id(fields: dict) -> str | None:
+def fields_to_slot_id(fields: dict, today: date | None = None) -> str | None:
     """Map extracted fields onto the slot-table naming scheme <www>-<HHMM>.
 
     An explicit relative day ("tomorrow"/"tonight") beats an earlier weekday —
-    it resolves against the local date. "September 20"-style dates can't map
+    it resolves against `today` (the shop's local date in production; the
+    caller's machine date in tests). "September 20"-style dates can't map
     to a weekday without a year and stay unresolvable.
     """
     day = fields.get("weekday")
     if fields.get("day_offset") is not None:
-        d = date.today() + timedelta(days=int(fields["day_offset"]))
+        d = (today or date.today()) + timedelta(days=int(fields["day_offset"]))
         day = _WEEKDAYS[d.weekday()][:3]
     time_ = fields.get("time")
     if day and time_:
@@ -106,11 +166,24 @@ class DeterministicExtractor:
 
     def summarize(self, wm: WorkingMemory) -> str:
         bits = [f"Call {wm.call_id} from {wm.caller_id}."]
-        if wm.confirmed.get("booking"):
-            b = wm.confirmed["booking"]
+        # bookings[] is the action log for the whole call — a caller may
+        # hold several slots, so every one is recorded, not just the last.
+        bookings = wm.confirmed.get("bookings")
+        if not bookings and wm.confirmed.get("booking"):
+            bookings = [wm.confirmed["booking"]]
+        for b in bookings or []:
+            status = b.get("status", "confirmed")
+            verb = {"confirmed": "Booked", "cancelled": "Cancelled",
+                    "moved": "Moved", "released": "Released"}.get(
+                        status, str(status).title())
             bits.append(
-                f"Booked {b['slot_id']} for party of {b['party_size']}"
-                + (f" ({b['name']})" if b.get("name") else "") + "."
+                f"{verb} {b['slot_id']} for party of {b['party_size']}"
+                + (f" ({b['name']})" if b.get("name") else "")
+                + (f" — moved from {b['moved_from']}"
+                   if b.get("moved_from") else "")
+                + (f" — moved to {b['moved_to']}"
+                   if b.get("moved_to") else "")
+                + "."
             )
         for u in wm.unresolved:
             bits.append(f"Unresolved: {u}.")
@@ -122,9 +195,11 @@ class DeterministicExtractor:
         if b:
             facts["last_booking_slot"] = b["slot_id"]
             facts["last_booking_party_size"] = str(b["party_size"])
-            if b.get("name"):
-                facts["name"] = b["name"]
             facts["last_booking_status"] = b.get("status", "confirmed")
+        # A name given on any call — booking or pure inquiry — is durable.
+        name = (b or {}).get("name") or wm.confirmed.get("caller_name")
+        if name:
+            facts["name"] = name
         if wm.unresolved:
             facts["pending"] = "; ".join(wm.unresolved)
         return facts
@@ -135,7 +210,9 @@ class DeterministicExtractor:
             return "booking_cancelled"
         if b:
             return "booking_confirmed"
-        if any("spam" in r.lower() for r in wm.requests):
+        # Set by the responder's telemarketing-pattern flag — a real caller
+        # never has to say the word "spam" for the category to fire.
+        if wm.confirmed.get("spam"):
             return "spam"
         if any("gone" in u for u in wm.unresolved):
             return "booking_failed"

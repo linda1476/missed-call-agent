@@ -37,12 +37,29 @@ requests, confirmations, tool results — destroyed after handoff. **Raw
 transcripts are never persisted** (privacy minimization).
 
 Booking uses compare-and-set on a single slot row — never a store-wide
-lock. Losers of a race get alternatives offered.
+lock. Losers of a race get alternatives offered, and an accepted offer
+books without a redundant second confirmation. A caller may hold several
+slots; the slot table (not memory) is authoritative for what they hold.
+Moves are atomic: `booking_reserve`'s `swap_from` releases the old slot in
+the same transaction, after the new CAS succeeds — a failed move keeps the
+original. `SLOT_PER_CALLER_CAP` (default 4) bounds how many slots one
+caller can hold, and a swap doesn't count as an extra booking against it.
+
+The memory spec's contradiction check is real code, not a prompt: after
+every reply, `voice/guard.py` deterministically compares claimed bookings/
+cancellations against the slot table and regenerates the reply when they
+diverge — wired in `pipeline.turn`, and available to the production WS
+path via `run_session(reply_guard=make_reply_guard(wm, slots, store_id))`
+(it fires `reply.create` with correction instructions on `transcript.agent`).
 
 ## AssemblyAI features used
 
-- Voice Agent API WebSocket session (`session.update` w/ tools, `input.audio`,
-  `tool.call`/`tool.result`, `session.end`)
+- Voice Agent API WebSocket session at `wss://agents.assemblyai.com/v1/ws`:
+  `session.update` w/ tools + keyterms → `session.ready` gate →
+  `input.audio` → `tool.call` (`call_id`) → `tool.result` (JSON-string
+  result drained on `reply.done`, discarded on `status:"interrupted"`) →
+  `session.end` (stops billing immediately — a bare disconnect costs a
+  30-second grace window)
 - Server-side **HTTP tools** pointing at `POST /tools/{name}` on this server
   (client-side function tools also supported via `voice/session.py`)
 - Tool-call JSON Schemas for accuracy + turn-taking (schemas/ is the single
@@ -65,16 +82,29 @@ pytest tests/acceptance -k "not p0_8"        # acceptance suite (offline)
 python tests/fixtures/generate_fixtures.py   # regenerate audio fixtures (needs edge-tts)
 ```
 
-Endpoints: `POST /tools/{name}` (HTTP tools for AssemblyAI),
-`GET /call/start` + `GET /call/{sid}/status` (session liveness, P0-8),
-`GET /dashboard` (owner feed) + `POST /dashboard/correct` (owner rule).
+Endpoints: `POST /tools/{name}` (HTTP tools for AssemblyAI: `memory_load`,
+`memory_search`, `booking_reserve`, `booking_release`, `report_emit`),
+`POST /call/start` + `POST /call/{sid}/turn` + `POST /call/{sid}/end` +
+`GET /call/{sid}/status` (real call sessions through the dialogue engine —
+a WorkingMemory opens at start, turns drive the responder, end/expiry runs
+the handoff), `GET /call` (browser-mic demo page: SpeechRecognition → the
+session endpoints → SpeechSynthesis, no extra infra), `GET /dashboard`
+(owner feed) + `POST /dashboard/correct` (owner rule).
 
 **Deploying:** set `TOOLS_API_KEY` — every endpoint except `/health` and the
-anonymous `/call/*` liveness endpoints then requires `Authorization: Bearer
-<key>` (or `?key=` for the browser dashboard). Configure the same header on
-the HTTP tools in the AssemblyAI session. Unset = dev mode, all open.
-`DAILY_SPEND_CAP_USD` stops new sessions once the day's usage estimate
-(session seconds at $4.50/hr) passes the cap.
+anonymous `/call/*` session endpoints then requires `Authorization: Bearer
+<key>` (or `?key=` for the browser dashboard). `?caller_id=` on
+`/call/start` is honored only when the request carries the key — anonymous
+sessions get anonymous caller ids, so a stranger can't read or cancel
+someone else's bookings. Configure the same header on the HTTP tools in
+the AssemblyAI session. Unset = dev mode, all open.
+`SEED_SLOTS` seeds the shop's bookable slots (required — an empty slot
+table can't take bookings). `DAILY_SPEND_CAP_USD` stops new sessions once
+the day's usage estimate (session seconds at $4.50/hr) passes the cap —
+the check+reservation is atomic so bursts can't overshoot. `SHOP_TZ`
+(IANA name, e.g. `America/New_York`) makes "tomorrow"/"tonight" resolve
+against the shop's local date rather than the host's; `SLOT_PER_CALLER_CAP`
+(default 4, 0 = unlimited) bounds simultaneous holds per caller.
 
 The acceptance suite is the contract: `tests/acceptance/test_p0_*` — one
 test per task, unmodified once written.

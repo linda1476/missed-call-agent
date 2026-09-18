@@ -35,9 +35,27 @@
       "properties": {
         "slot_id": { "type": "string" },
         "party_size": { "type": "integer" },
-        "status": { "type": "string", "enum": ["confirmed", "waitlisted", "cancelled"] }
+        "status": { "type": "string", "enum": ["confirmed", "waitlisted", "cancelled", "moved"] },
+        "moved_from": { "type": "string" },
+        "moved_to": { "type": "string" }
       },
       "additionalProperties": false
+    },
+    "bookings": {
+      "type": "array",
+      "description": "Every booking action taken on this call — a caller may hold or change several slots in one call.",
+      "items": {
+        "type": "object",
+        "required": ["slot_id", "party_size", "status"],
+        "properties": {
+          "slot_id": { "type": "string" },
+          "party_size": { "type": "integer" },
+          "status": { "type": "string", "enum": ["confirmed", "waitlisted", "cancelled", "moved"] },
+          "moved_from": { "type": "string" },
+          "moved_to": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
     }
   },
   "additionalProperties": false

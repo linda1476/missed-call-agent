@@ -8,10 +8,26 @@ from pathlib import Path
 _SCHEMA_PATH = Path(__file__).resolve().parent.parent.parent / "schemas" / "report_output.json"
 
 
+def _booking_public(b: dict) -> dict:
+    out = {"slot_id": b["slot_id"],
+           "party_size": int(b["party_size"]),
+           "status": b.get("status", "confirmed")}
+    if b.get("moved_to"):
+        out["moved_to"] = b["moved_to"]
+    if b.get("moved_from"):
+        out["moved_from"] = b["moved_from"]
+    return out
+
+
 def build_report(wm, extractor) -> dict:
     """Build the report dict from a finished call's working memory."""
-    b = wm.confirmed.get("booking")
     category = extractor.categorize(wm)
+    # bookings[] is the call's full action log (a caller may hold or touch
+    # several slots); confirmed["booking"] stays as the latest for compat.
+    bookings = wm.confirmed.get("bookings")
+    if not bookings and wm.confirmed.get("booking"):
+        bookings = [wm.confirmed["booking"]]
+    b = wm.confirmed.get("booking")
 
     action_items: list[dict] = []
     if category == "booking_confirmed":
@@ -30,10 +46,20 @@ def build_report(wm, extractor) -> dict:
         action_items.append({"kind": "review_rule",
                              "detail": "General inquiry — no booking change."})
 
-    if b:
-        verb = "cancelled" if b.get("status") == "cancelled" else "booked"
-        summary = (f"{wm.caller_id}: {verb} {b['slot_id']} for "
-                   f"{b['party_size']} ({b.get('name', 'guest')}).")
+    if bookings:
+        verbs = {"confirmed": "booked", "cancelled": "cancelled",
+                 "moved": "moved off"}
+        parts = []
+        for e in bookings:
+            s = (f"{verbs.get(e.get('status'), e.get('status'))} "
+                 f"{e['slot_id']} for {e['party_size']}"
+                 f" ({e.get('name') or 'guest'})")
+            if e.get("moved_from"):
+                s += f" [from {e['moved_from']}]"
+            if e.get("moved_to"):
+                s += f" [to {e['moved_to']}]"
+            parts.append(s)
+        summary = f"{wm.caller_id}: {'; '.join(parts)}."
     elif wm.unresolved:
         summary = f"{wm.caller_id}: needs callback — {'; '.join(wm.unresolved)}."
     else:
@@ -46,11 +72,8 @@ def build_report(wm, extractor) -> dict:
         "category": category,
         "action_items": action_items,
         "summary": summary,
-        "booking": ({
-            "slot_id": b["slot_id"],
-            "party_size": int(b["party_size"]),
-            "status": "confirmed" if b.get("status", "confirmed") == "confirmed" else b["status"],
-        } if b else None),
+        "booking": (_booking_public(b) if b else None),
+        "bookings": [_booking_public(e) for e in (bookings or [])],
     }
 
 

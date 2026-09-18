@@ -15,6 +15,7 @@ from ..memory.handoff import run_handoff
 from ..memory.store import MemoryStore
 from ..memory.working import WorkingMemory
 from ..report.emit import build_report
+from .guard import enforce_reply
 from .respond import Responder
 from .stt import WhisperSTT
 
@@ -57,6 +58,19 @@ class CallPipeline:
 
     # ---- turn handling ----
 
+    def turn(self, wm: WorkingMemory, text: str) -> str:
+        """One user utterance -> agent reply. Used by live /call sessions
+        and by run_utterances for text-fed calls."""
+        responder = Responder(self.store_id, self.slots)
+        wm.add_turn("user", text)
+        wm.requests.append(text)
+        reply = responder.handle_utterance(wm, text)
+        # Deterministic 대조 (spec): a reply that contradicts current values
+        # is caught by code and regenerated — never trusted to model judgment.
+        reply = enforce_reply(reply, wm, self.slots, self.store_id)
+        wm.add_turn("agent", reply)
+        return reply
+
     def run_utterances(self, wm: WorkingMemory, utterances: list[str]) -> CallResult:
         responder = Responder(self.store_id, self.slots)
         result = CallResult(call_id=wm.call_id, caller_id=wm.caller_id)
@@ -64,11 +78,7 @@ class CallPipeline:
         wm.add_turn("agent", greet)
         result.replies.append(greet)
         for text in utterances:
-            wm.add_turn("user", text)
-            wm.requests.append(text)
-            reply = responder.handle_utterance(wm, text)
-            wm.add_turn("agent", reply)
-            result.replies.append(reply)
+            result.replies.append(self.turn(wm, text))
         result.booking = wm.confirmed.get("booking")
         return result
 

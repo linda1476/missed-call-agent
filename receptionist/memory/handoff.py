@@ -26,9 +26,12 @@ def run_handoff(store: MemoryStore, wm: WorkingMemory, extractor: Extractor,
         store.set_current(wm.store_id, wm.caller_id, key, value)
 
     # state update: the booking table is already authoritative via CAS during
-    # the call; here we record the outcome as an immutable history record.
-    b = wm.confirmed.get("booking")
-    if b:
+    # the call; here we record the outcome as immutable history records —
+    # one per booking action (a caller may hold several slots).
+    bookings = wm.confirmed.get("bookings")
+    if not bookings and wm.confirmed.get("booking"):
+        bookings = [wm.confirmed["booking"]]
+    for b in bookings or []:
         store.append_history(
             wm.store_id, wm.caller_id, "booking_record",
             f"booking {b['status']} {b['slot_id']} party={b['party_size']}",
