@@ -5,6 +5,7 @@ this call's requests / confirmations / unresolved items, and tool results.
 The raw transcript exists only here and is never persisted after handoff.
 """
 
+import time
 from dataclasses import dataclass, field
 
 
@@ -13,6 +14,7 @@ class WorkingMemory:
     store_id: str
     call_id: str
     caller_id: str
+    created_at: float = field(default_factory=time.time)
     current_slots: dict = field(default_factory=dict)
     rules: list = field(default_factory=list)
     turns: list = field(default_factory=list)          # [{speaker, text}]

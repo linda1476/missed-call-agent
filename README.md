@@ -65,6 +65,17 @@ pytest tests/acceptance -k "not p0_8"        # acceptance suite (offline)
 python tests/fixtures/generate_fixtures.py   # regenerate audio fixtures (needs edge-tts)
 ```
 
+Endpoints: `POST /tools/{name}` (HTTP tools for AssemblyAI),
+`GET /call/start` + `GET /call/{sid}/status` (session liveness, P0-8),
+`GET /dashboard` (owner feed) + `POST /dashboard/correct` (owner rule).
+
+**Deploying:** set `TOOLS_API_KEY` — every endpoint except `/health` and the
+anonymous `/call/*` liveness endpoints then requires `Authorization: Bearer
+<key>` (or `?key=` for the browser dashboard). Configure the same header on
+the HTTP tools in the AssemblyAI session. Unset = dev mode, all open.
+`DAILY_SPEND_CAP_USD` stops new sessions once the day's usage estimate
+(session seconds at $4.50/hr) passes the cap.
+
 The acceptance suite is the contract: `tests/acceptance/test_p0_*` — one
 test per task, unmodified once written.
 

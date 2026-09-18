@@ -3,6 +3,7 @@ T0-3: LLM Gateway tokens are billed separately and not covered by free
 credits). An LLM extractor can be dropped in behind the same protocol."""
 
 import re
+from datetime import date, timedelta
 from typing import Protocol
 
 from .working import WorkingMemory
@@ -76,11 +77,19 @@ def parse_booking_fields(text: str) -> dict:
 
 
 def fields_to_slot_id(fields: dict) -> str | None:
-    """Map extracted fields onto the slot-table naming scheme <www>-<HHMM>."""
+    """Map extracted fields onto the slot-table naming scheme <www>-<HHMM>.
+
+    An explicit relative day ("tomorrow"/"tonight") beats an earlier weekday —
+    it resolves against the local date. "September 20"-style dates can't map
+    to a weekday without a year and stay unresolvable.
+    """
     day = fields.get("weekday")
-    time = fields.get("time")
-    if day and time:
-        return f"{day}-{time}"
+    if fields.get("day_offset") is not None:
+        d = date.today() + timedelta(days=int(fields["day_offset"]))
+        day = _WEEKDAYS[d.weekday()][:3]
+    time_ = fields.get("time")
+    if day and time_:
+        return f"{day}-{time_}"
     return None
 
 
@@ -121,10 +130,15 @@ class DeterministicExtractor:
         return facts
 
     def categorize(self, wm: WorkingMemory) -> str:
-        if wm.confirmed.get("booking"):
+        b = wm.confirmed.get("booking")
+        if b and b.get("status") == "cancelled":
+            return "booking_cancelled"
+        if b:
             return "booking_confirmed"
         if any("spam" in r.lower() for r in wm.requests):
             return "spam"
+        if any("gone" in u for u in wm.unresolved):
+            return "booking_failed"
         if wm.unresolved:
             return "callback_needed"
         return "inquiry"

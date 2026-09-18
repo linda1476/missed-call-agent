@@ -10,7 +10,7 @@
     "finished_at": { "type": "string", "format": "date-time" },
     "category": {
       "type": "string",
-      "enum": ["booking_confirmed", "booking_failed", "callback_needed", "inquiry", "spam"]
+      "enum": ["booking_confirmed", "booking_cancelled", "booking_failed", "callback_needed", "inquiry", "spam"]
     },
     "action_items": {
       "type": "array",

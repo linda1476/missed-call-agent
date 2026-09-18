@@ -43,9 +43,13 @@ def build_session_update(system_prompt: str, greeting: str) -> dict:
 
 async def run_session(pcm_source, dispatch, api_key: str | None = None,
                       system_prompt: str = "You are a concise receptionist.",
-                      greeting: str = "Thanks for calling!"):
+                      greeting: str = "Thanks for calling!",
+                      on_end=None):
     """Drive one Voice Agent session. `pcm_source` yields PCM16 bytes;
     `dispatch(name, args) -> dict` runs tool calls (tools/handlers.py).
+    `on_end` (optional, sync or async) runs after session.ended/disconnect —
+    the production harness uses it to run post-call handoff for any call the
+    agent did not close via report_emit.
     Raises RuntimeError without a key — see DECISIONS.md D1."""
     import websockets
 
@@ -81,3 +85,7 @@ async def run_session(pcm_source, dispatch, api_key: str | None = None,
                     break
         finally:
             sender.cancel()
+            if on_end is not None:
+                maybe = on_end()
+                if asyncio.iscoroutine(maybe):
+                    await maybe

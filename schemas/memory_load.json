@@ -1,7 +1,7 @@
 {
   "type": "function",
   "name": "memory_load",
-  "description": "Load the caller's current-value slots and all procedural rules for this shop. Call once at the start of every call.",
+  "description": "Load the caller's current-value slots and all procedural rules for this shop. Call once at the start of every call; returns a call_id to pass to report_emit at hangup.",
   "parameters": {
     "type": "object",
     "properties": {

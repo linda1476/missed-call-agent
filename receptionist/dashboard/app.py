@@ -42,6 +42,8 @@ body {{ font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 44rem;
 h1 {{ font-size: 1.3rem; }}
 .card {{ background: #1b1f27; border: 1px solid #2a2f3a; border-left: 4px solid #4c8dff; border-radius: 10px; padding: 1rem; margin: .8rem 0; }}
 .card.cat-booking_confirmed {{ border-left-color: #2fbf71; }}
+.card.cat-booking_cancelled {{ border-left-color: #e05d5d; }}
+.card.cat-booking_failed {{ border-left-color: #e05d5d; }}
 .card.cat-callback_needed {{ border-left-color: #f2a93b; }}
 .card.cat-spam {{ border-left-color: #888; opacity: .7; }}
 .cat {{ text-transform: uppercase; font-size: .7rem; letter-spacing: .08em; color: #9aa4b2; }}
@@ -54,7 +56,7 @@ button {{ padding: .5rem 1rem; background: #4c8dff; border: 0; border-radius: 6p
 </style></head><body>
 <h1>Missed-call agent — owner feed</h1>
 {body}
-<form class="correct" method="post" action="/dashboard/correct" onsubmit="fetch('/dashboard/correct',{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{rule_text:this.rule_text.value}})}});return false">
+<form class="correct" method="post" action="/dashboard/correct" onsubmit="fetch('/dashboard/correct'+location.search,{{method:'POST',headers:{{'Content-Type':'application/json'}},body:JSON.stringify({{rule_text:this.rule_text.value}})}});return false">
   <b>Owner correction → standing rule</b>
   <textarea name="rule_text" rows="2" placeholder="e.g. auto-book parties of 4 or fewer without confirming"></textarea>
   <button type="submit">Save rule</button>

@@ -16,6 +16,8 @@ def build_report(wm, extractor) -> dict:
     action_items: list[dict] = []
     if category == "booking_confirmed":
         action_items.append({"kind": "none", "detail": "No action needed — booking confirmed."})
+    elif category == "booking_cancelled":
+        action_items.append({"kind": "none", "detail": "Caller cancelled their booking — slot released."})
     elif category == "callback_needed":
         action_items.append({"kind": "callback",
                              "detail": "; ".join(wm.unresolved) or "Caller needs a callback."})
@@ -29,7 +31,8 @@ def build_report(wm, extractor) -> dict:
                              "detail": "General inquiry — no booking change."})
 
     if b:
-        summary = (f"{wm.caller_id}: booked {b['slot_id']} for "
+        verb = "cancelled" if b.get("status") == "cancelled" else "booked"
+        summary = (f"{wm.caller_id}: {verb} {b['slot_id']} for "
                    f"{b['party_size']} ({b.get('name', 'guest')}).")
     elif wm.unresolved:
         summary = f"{wm.caller_id}: needs callback — {'; '.join(wm.unresolved)}."

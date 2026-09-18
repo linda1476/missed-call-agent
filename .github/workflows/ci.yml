@@ -11,6 +11,6 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
-      - name: Acceptance tests (offline suite)
-        run: pytest tests/acceptance -v -k "not p0_8"
+      - name: Acceptance + unit tests (offline suite)
+        run: pytest tests -v -k "not p0_8"
         # P0-8 requires the hosted deployment (PUBLIC_URL); runs post-deploy.
