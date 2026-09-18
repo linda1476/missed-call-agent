@@ -1,0 +1,102 @@
+[
+  {
+    "file": "noun_01.wav",
+    "noun": "Guadalupe",
+    "sentence": "I have a reservation under Guadalupe."
+  },
+  {
+    "file": "noun_02.wav",
+    "noun": "Tzatziki",
+    "sentence": "I have a reservation under Tzatziki."
+  },
+  {
+    "file": "noun_03.wav",
+    "noun": "Bouillabaisse",
+    "sentence": "I have a reservation under Bouillabaisse."
+  },
+  {
+    "file": "noun_04.wav",
+    "noun": "Nguyen",
+    "sentence": "I have a reservation under Nguyen."
+  },
+  {
+    "file": "noun_05.wav",
+    "noun": "Xiomara",
+    "sentence": "I have a reservation under Xiomara."
+  },
+  {
+    "file": "noun_06.wav",
+    "noun": "Charcuterie",
+    "sentence": "I have a reservation under Charcuterie."
+  },
+  {
+    "file": "noun_07.wav",
+    "noun": "Acai",
+    "sentence": "I have a reservation under Acai."
+  },
+  {
+    "file": "noun_08.wav",
+    "noun": "Worcester",
+    "sentence": "I have a reservation under Worcester."
+  },
+  {
+    "file": "noun_09.wav",
+    "noun": "Szechuan",
+    "sentence": "I have a reservation under Szechuan."
+  },
+  {
+    "file": "noun_10.wav",
+    "noun": "Quesadilla",
+    "sentence": "I have a reservation under Quesadilla."
+  },
+  {
+    "file": "noun_11.wav",
+    "noun": "Beauregard",
+    "sentence": "I have a reservation under Beauregard."
+  },
+  {
+    "file": "noun_12.wav",
+    "noun": "Gnocchi",
+    "sentence": "I have a reservation under Gnocchi."
+  },
+  {
+    "file": "noun_13.wav",
+    "noun": "Tzimmes",
+    "sentence": "I have a reservation under Tzimmes."
+  },
+  {
+    "file": "noun_14.wav",
+    "noun": "Katsudon",
+    "sentence": "I have a reservation under Katsudon."
+  },
+  {
+    "file": "noun_15.wav",
+    "noun": "Ezekiel",
+    "sentence": "I have a reservation under Ezekiel."
+  },
+  {
+    "file": "noun_16.wav",
+    "noun": "Madeleine",
+    "sentence": "I have a reservation under Madeleine."
+  },
+  {
+    "file": "noun_17.wav",
+    "noun": "Prosciutto",
+    "sentence": "I have a reservation under Prosciutto."
+  },
+  {
+    "file": "noun_18.wav",
+    "noun": "Joaquin",
+    "sentence": "I have a reservation under Joaquin."
+  },
+  {
+    "file": "noun_19.wav",
+    "noun": "Vichyssoise",
+    "sentence": "I have a reservation under Vichyssoise."
+  },
+  {
+    "file": "noun_20.wav",
+    "noun": "Oaxaca",
+    "sentence": "I have a reservation under Oaxaca."
+  }
+]

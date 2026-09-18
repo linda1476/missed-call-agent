@@ -1,0 +1,30 @@
+{
+  "type": "function",
+  "name": "memory_search",
+  "description": "Search the caller's append-only history (past call summaries, past bookings). Returns the top-k matching entries. History is never preloaded into the prompt; call this only when needed.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "caller_id": {
+        "type": "string",
+        "description": "Caller phone number in E.164 form, or an anonymous call id.",
+        "pattern": "^\\+?[0-9A-Za-z_-]{4,32}$",
+        "examples": ["+14155552671", "anon-7f3a2b"]
+      },
+      "query": {
+        "type": "string",
+        "description": "Natural-language search query, e.g. 'last reservation' or 'cancellation'.",
+        "examples": ["last reservation", "birthday party booking"]
+      },
+      "k": {
+        "type": "integer",
+        "description": "Max history entries to return.",
+        "minimum": 1,
+        "maximum": 10,
+        "default": 3
+      }
+    },
+    "required": ["caller_id", "query"],
+    "additionalProperties": false
+  }
+}

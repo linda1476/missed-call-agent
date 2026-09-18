@@ -1,0 +1,24 @@
+{
+  "type": "function",
+  "name": "booking_release",
+  "description": "Release (cancel) a booking slot the caller currently holds. Guarded: only succeeds if the slot is actually held by this caller. When the caller wants to MOVE a booking, call booking_reserve for the new slot first, then release the old one only if the reserve succeeded — a failed move keeps the original.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "slot_id": {
+        "type": "string",
+        "description": "Identifier of the slot to release (e.g. the caller's last_booking_slot from memory_load).",
+        "pattern": "^[A-Za-z0-9_-]{2,40}$",
+        "examples": ["fri-1900", "sat-1230"]
+      },
+      "caller_id": {
+        "type": "string",
+        "description": "Caller phone number in E.164 form, or an anonymous call id.",
+        "pattern": "^\\+?[0-9A-Za-z_-]{4,32}$",
+        "examples": ["+14155552671", "anon-7f3a2b"]
+      }
+    },
+    "required": ["slot_id", "caller_id"],
+    "additionalProperties": false
+  }
+}

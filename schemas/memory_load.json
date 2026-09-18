@@ -1,0 +1,18 @@
+{
+  "type": "function",
+  "name": "memory_load",
+  "description": "Load the caller's current-value slots and all procedural rules for this shop. Call once at the start of every call; returns a call_id to pass to report_emit at hangup.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "caller_id": {
+        "type": "string",
+        "description": "Caller phone number in E.164 form, or an anonymous call id if no number is available.",
+        "pattern": "^\\+?[0-9A-Za-z_-]{4,32}$",
+        "examples": ["+14155552671", "+442071838750", "anon-7f3a2b"]
+      }
+    },
+    "required": ["caller_id"],
+    "additionalProperties": false
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "type": "function",
+  "name": "booking_reserve",
+  "description": "Atomically reserve a booking slot for the caller. Uses compare-and-set: succeeds only if the slot is still free. On failure returns alternative free slots to offer the caller.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "slot_id": {
+        "type": "string",
+        "description": "Identifier of the slot to reserve, from the shop's slot table (e.g. 'fri-1900').",
+        "pattern": "^[A-Za-z0-9_-]{2,40}$",
+        "examples": ["fri-1900", "sat-1230"]
+      },
+      "party_size": {
+        "type": "integer",
+        "description": "Number of people for the booking.",
+        "minimum": 1,
+        "maximum": 20,
+        "examples": [2, 4]
+      },
+      "caller_id": {
+        "type": "string",
+        "description": "Caller phone number in E.164 form, or an anonymous call id.",
+        "pattern": "^\\+?[0-9A-Za-z_-]{4,32}$",
+        "examples": ["+14155552671", "anon-7f3a2b"]
+      },
+      "swap_from": {
+        "type": "string",
+        "description": "For a change/move request: the caller's existing held slot to release atomically once the new reservation succeeds. Must be a slot currently held by this caller.",
+        "pattern": "^[A-Za-z0-9_-]{2,40}$",
+        "examples": ["fri-1900"]
+      }
+    },
+    "required": ["slot_id", "party_size", "caller_id"],
+    "additionalProperties": false
+  }
+}

@@ -1,0 +1,16 @@
+name: acceptance
+
+on: [push, pull_request]
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Acceptance + unit tests (offline suite)
+        run: pytest tests -v -k "not p0_8"
+        # P0-8 requires the hosted deployment (PUBLIC_URL); runs post-deploy.

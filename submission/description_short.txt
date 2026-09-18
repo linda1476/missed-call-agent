@@ -1,0 +1,1 @@
+A voice agent that answers a small shop's missed calls, remembers every caller across calls, and never double-books — even when the phone rings off the hook. Built on the AssemblyAI Voice Agent API. MIT.

@@ -1,0 +1,28 @@
+{
+  "name": "concurrent — two callers race the last Saturday slot",
+  "concurrent": true,
+  "seed_slots": ["sat-1900", "sat-2000"],
+  "calls": [
+    {
+      "caller_id": "+14155551011",
+      "utterances": [
+        "Table for two on Saturday at 7 PM, name is Alex.",
+        "Yes."
+      ],
+      "expect": {}
+    },
+    {
+      "caller_id": "+14155551012",
+      "utterances": [
+        "Table for four on Saturday at 7 PM, name is Blair.",
+        "Yes."
+      ],
+      "expect": {}
+    }
+  ],
+  "expect": {
+    "exactly_one_confirmed": true,
+    "winning_slot": "sat-1900",
+    "loser_offered_alternative": true
+  }
+}
