@@ -1,0 +1,18 @@
+{
+  "type": "function",
+  "name": "report_emit",
+  "description": "Emit the owner-facing action-unit report for a finished call. Called once per call, after hangup, during post-call handoff.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "call_id": {
+        "type": "string",
+        "description": "Identifier of the finished call.",
+        "pattern": "^[A-Za-z0-9_-]{4,64}$",
+        "examples": ["call_01HXZ...", "sess_abc123"]
+      }
+    },
+    "required": ["call_id"],
+    "additionalProperties": false
+  }
+}

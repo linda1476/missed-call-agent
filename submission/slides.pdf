@@ -1,0 +1,87 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Length 48 >>
+stream
+BT /F1 22 Tf 60 700 Td (missed-call-agent) Tj ET
+endstream
+endobj
+3 0 obj
+<< /Type /Page /Parent 14 0 R /MediaBox [0 0 792 612] /Resources << /Font << /F1 1 0 R >> >> /Contents 2 0 R >>
+endobj
+4 0 obj
+<< /Length 112 >>
+stream
+BT /F1 22 Tf 60 700 Td (Problem: small shops miss ~28-62% of calls; ~85% of those callers never call back) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 14 0 R /MediaBox [0 0 792 612] /Resources << /Font << /F1 1 0 R >> >> /Contents 4 0 R >>
+endobj
+6 0 obj
+<< /Length 110 >>
+stream
+BT /F1 22 Tf 60 700 Td (Demo: first call -> booking; repeat call -> recalled; concurrent race -> 1 wins) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 14 0 R /MediaBox [0 0 792 612] /Resources << /Font << /F1 1 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 104 >>
+stream
+BT /F1 22 Tf 60 700 Td (Architecture: Voice Agent API tool.call -> 3-kind memory -> CAS slot lock) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 14 0 R /MediaBox [0 0 792 612] /Resources << /Font << /F1 1 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 113 >>
+stream
+BT /F1 22 Tf 60 700 Td (Differentiators: cross-call memory | concurrent slot lock | owner-correction rules) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 14 0 R /MediaBox [0 0 792 612] /Resources << /Font << /F1 1 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 103 >>
+stream
+BT /F1 22 Tf 60 700 Td (Business: $4.50/hr all-in voice stack; pays for itself in saved bookings) Tj ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 14 0 R /MediaBox [0 0 792 612] /Resources << /Font << /F1 1 0 R >> >> /Contents 12 0 R >>
+endobj
+14 0 obj
+<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R 9 0 R 11 0 R 13 0 R] /Count 6 >>
+endobj
+15 0 obj
+<< /Type /Catalog /Pages 14 0 R >>
+endobj
+xref
+0 16
+0000000000 65535 f 
+0000000009 00000 n 
+0000000079 00000 n 
+0000000177 00000 n 
+0000000304 00000 n 
+0000000467 00000 n 
+0000000594 00000 n 
+0000000755 00000 n 
+0000000882 00000 n 
+0000001037 00000 n 
+0000001164 00000 n 
+0000001329 00000 n 
+0000001458 00000 n 
+0000001613 00000 n 
+0000001742 00000 n 
+0000001832 00000 n 
+trailer
+<< /Size 16 /Root 15 0 R >>
+startxref
+1883
+%%EOF

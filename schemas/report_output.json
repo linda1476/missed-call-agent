@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OwnerReport",
+  "description": "Action-unit report sent to the shop owner after a call. One call = one report.",
+  "type": "object",
+  "required": ["call_id", "caller_id", "finished_at", "category", "action_items", "summary"],
+  "properties": {
+    "call_id": { "type": "string" },
+    "caller_id": { "type": "string" },
+    "finished_at": { "type": "string", "format": "date-time" },
+    "category": {
+      "type": "string",
+      "enum": ["booking_confirmed", "booking_failed", "callback_needed", "inquiry", "spam"]
+    },
+    "action_items": {
+      "type": "array",
+      "description": "Discrete units of work the owner must do or know about.",
+      "items": {
+        "type": "object",
+        "required": ["kind", "detail"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["none", "callback", "confirm_booking", "follow_up", "review_rule"]
+          },
+          "detail": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "summary": { "type": "string", "description": "One-sentence human-readable summary." },
+    "booking": {
+      "type": ["object", "null"],
+      "required": ["slot_id", "party_size", "status"],
+      "properties": {
+        "slot_id": { "type": "string" },
+        "party_size": { "type": "integer" },
+        "status": { "type": "string", "enum": ["confirmed", "waitlisted", "cancelled"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,13 @@
+Small businesses miss a large share of incoming calls, and most of those callers never try again. missed-call-agent answers the phone when the owner can't: it greets the caller, takes bookings and inquiries, and files an action-unit report on the owner's dashboard.
+
+What makes it different:
+
+1. Cross-call memory. Long-term memory is split into three kinds kept strictly separate — current-value slots (always in prompt, overwrite semantics), append-only history (search-only, enforced by DB triggers), and procedural rules (created only through owner correction, each carrying its source). A second call from the same number picks up where the first ended.
+
+2. Concurrency-safe booking. Two callers asking for the same slot can't both win: reservations are compare-and-set on a single slot row. The loser is offered alternatives. Verified by an acceptance test that races 100 concurrent reservations and asserts zero duplicates.
+
+3. Owner-correction procedural memory. When the owner types "auto-book parties of 4 or fewer without confirming", the rule is stored with its source and applies to the next call — no redeploy, no prompt edit.
+
+Built on the AssemblyAI Voice Agent API: a single WebSocket carries audio in and out while JSON-Schema tool calls hit our memory and booking endpoints. Tool schemas are defined once in schemas/ and shared by the server and the prompt. Post-call handoff runs a fixed pipeline — summary to history, facts to current slots, state to the slot table, then an owner report — and raw transcripts are discarded, not stored.
+
+Everything in the repo is verifiable: tests/acceptance holds one immutable test per feature task, runnable offline with pytest.
